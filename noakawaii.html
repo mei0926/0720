@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0"/>
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<link rel="apple-touch-icon" href="dat/ios.png" />
+<meta name="apple-mobile-web-app-title" content="チケプラ電子チケット" />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;600&display=swap" rel="stylesheet"/>
+<meta name="robots" content="noindex, nofollow">
+<style>
+/* タップ時の青ハイライト・押した感を消す */
+button, a {
+  -webkit-tap-highlight-color: transparent; /* iOS/Android */
+  outline: none;                            /* フォーカス枠も消す */
+}
+
+button:active, a:active {
+  background: transparent;                  /* 押下時の背景変化も消す */
+}
+* { box-sizing: border-box; margin:0; padding:0; }
+body {
+  padding-top: env(safe-area-inset-top);
+  margin:0;
+  background:#fff;
+  overflow:hidden;
+  font-family:"Noto Sans JP", sans-serif;
+}
+
+/* ページ共通 */
+.page {
+  width:100vw;
+  height:100vh;
+  position:absolute;
+  top:0; left:0;
+  background:#fff;
+  transition: transform 0.25s ease;
+  overflow:hidden;
+}
+.page.right-out { transform:translateX(100%); }
+
+/* ヘッダー/フッター (P1) */
+#headerImg, #footerImg {
+  position:fixed;
+  left:50%;
+  transform:translateX(-50%);
+  width:auto;
+  max-width:100%;
+  height:auto;
+  z-index:500;
+}
+#headerImg { top:0; }
+#footerImg { bottom:0; }
+
+/* P1 ボタン */
+#btnPage3, #btnPage4, #btnPage5 {
+  position:absolute;
+  transform:translateX(-50%);
+  padding:20px;
+  font-size:10px;
+  border:none;
+  border-radius:12px;
+  background:transparent;
+  color:transparent;
+  cursor:pointer;
+  z-index:2000;
+}
+#btnPage3 { left:38%; bottom:5%; }
+#btnPage4 { left:63%; bottom:5%; }
+#btnPage5 { left:88%; bottom:5%; }
+
+/* P1 スクロールエリア */
+#scrollArea {
+  position:absolute;
+  top:0; bottom:0; left:0; width:100%;
+  overflow:hidden;
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  touch-action:none;
+}
+#scrollArea img { width:100%; height:auto; display:block; max-width:800px; }
+
+/* P1 次へボタン */
+#nextButton {
+  position:absolute;
+  top:35%;
+  left:50%;
+  transform:translateX(-50%);
+  padding:50px 100%;
+  font-size:35px;
+  border:none;
+  border-radius:12px;
+  background:transparent;
+  color:transparent;
+  cursor:pointer;
+  z-index:10;
+}
+
+/* 背景コンテナ共通 */
+.bgContainer {
+  position: relative;
+  width: 100%;
+  max-width: 800px; /* 背景画像の実サイズに合わせる */
+  margin: 0 auto;
+}
+.bgContainer img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* P2の要素 */
+#page2 .stamp {
+  position: absolute;
+  top: 17%;
+  left: 62%;
+  width: 29.5%;
+  transform-origin: left center;
+}
+#page2 .face {
+  position: absolute;
+  top: 50.5%;
+  left: 66.6%;
+  width: 27.5%;
+  border-radius: 8px;
+}
+#page2 .name {
+  position: absolute;
+  top: 53%;
+  left: 5.8%;
+  width: 66.6%;
+  font-size: 5vw;
+  /* color:#f8f8f8e2; */
+  color:#1e5d85;
+  font-weight:700;
+}
+#page2 .seat {
+  position: absolute;
+  top: 61%;
+  left: 5.8%;
+  width: 53%;
+  font-size: 5vw;
+  /* color:#f8f8f8e2; */
+  color:#1e5d85;
+  font-weight:900;
+}
+
+#page2 .back {
+  position: absolute;
+  top: 2%;
+  left: 2%;
+  width: 58.3%;
+  font-size: 5vw;
+  color:transparent;
+  background:transparent;
+  border:transparent;
+  font-weight:700;
+}
+#page6 .back {
+  position: absolute;
+  top: 2%;
+  left: 2%;
+  width: 58.3%;
+  font-size: 5vw;
+  color:transparent;
+  background:transparent;
+  border:transparent;
+  font-weight:700;
+}
+
+
+/* P5の要素 */
+#page5 .bgContainer {
+  position: relative;
+  width: 100%;
+  height: 0;            /* 初期は0にしてpaddingで縦幅を比率で確保 */
+  padding-top: 177%;    /* 画像の縦横比に合わせる（例: 縦177%なら1:1.77） */
+}
+#page5Bg {
+  position: absolute;
+  top:0; left:0;
+  width:100%;
+  height:100%;
+  object-fit:cover; /* 必要に応じてcontainも可 */
+}
+#page5 .name {
+  position: absolute;
+  top: 12.5%;   
+  left: 4%;   
+  width: 58.3%;
+  font-size: 4vw;
+  color:#52575a;
+  font-weight:700;
+  background:#fff;
+}
+#page5 .id {
+  position: absolute;
+  top: 16%;   
+  left: 4%;   
+  width: 58.3%;
+  font-size: 5vw;
+  color:#c3c7c8;
+  font-weight:700;
+  background:#fff;
+}
+#btnPage6 {
+  position: absolute;
+  top: 26%; /* フッターより少し上にする */
+  padding: 25px 20px;
+  background: transparent;
+  color: transparent;
+  border: none;
+  border-radius: 8px;
+  font-size: 7vw;
+  cursor: pointer;
+  z-index: 2000;
+}
+
+
+/* P3〜P5 背景 */
+#page3Bg,#page4Bg,#page5Bg { position:absolute; top:0; left:0; width:100%; height:auto; z-index:0; }
+
+/* P3〜P5 戻るボタン */
+.backBtn {
+  position:absolute;
+  left:5%;
+  bottom:5%;
+  padding:10px 20px;
+  background:transparent;
+  color:transparent;
+  border:none;
+  border-radius:8px;
+  font-size:4vw;
+  cursor:pointer;
+  z-index:2000;
+}
+
+/* P3〜P5 フッター */
+.footerImg {
+  position:fixed;
+  left:50%;
+  bottom:0;
+  transform:translateX(-50%);
+  width:auto;
+  max-width:100%;
+  height:auto;
+  z-index:1000;
+}
+.footerButtons {
+  position:fixed;
+  bottom:5%;
+  left:0;
+  width:100%;
+  display:flex;
+  justify-content:space-around;
+  z-index:2000;
+}
+.footerButtons button {
+  padding:20px;
+  background:transparent;
+  border:none;
+  color:transparent;
+  cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<!-- P1 -->
+<div id="page1" class="page">
+  <img id="headerImg" src="dat/head.png" alt="ヘッダー">
+  <div id="scrollArea">
+    <img src="pre.png" alt="チケット画像">
+    <button id="nextButton" onclick="goToPage(2)">次へ</button>
+  </div>
+  <img id="footerImg" src="dat/foot.png" alt="フッター">
+  <div id="footerButtons">
+    <button id="btnPage3" onclick="goToPage(3)">受け取り</button>
+    <button id="btnPage4" onclick="goToPage(4)">お知らせ</button>
+    <button id="btnPage5" onclick="goToPage(5)">マイペ</button>
+  </div>
+</div>
+
+<!-- P2 -->
+<div id="page2" class="page right-out">
+  <div class="bgContainer">
+    <img src="tike.png" id="page2Bg" alt="背景">
+    <img src="dat/stamp.png" class="stamp">
+    <img src="fac/2.png" class="face">
+    <div id="nameBox" class="name">タカセ ユウ 様</div>
+    <div id="seatBox" class="seat">アリーナ A4 ブロック 34番</div>
+    <button class="back" onclick="goToPage(1)">戻る</button>
+  </div>
+</div>
+
+<!-- P3 -->
+<div id="page3" class="page right-out">
+  <img src="dat/uketori.png" id="page3Bg">
+  <button class="backBtn" onclick="goToPage(1)">戻る</button>
+  <img src="dat/foot3.png" class="footerImg">
+  <div class="footerButtons">
+    <button id="btnPage3" onclick="goToPage(3)">受け取り</button>
+    <button id="btnPage4" onclick="goToPage(4)">お知らせ</button>
+    <button id="btnPage5" onclick="goToPage(5)">マイペ</button>
+  </div>
+</div>
+
+<!-- P4 -->
+<div id="page4" class="page right-out">
+  <img src="dat/news.png" id="page4Bg">
+  <button class="backBtn" onclick="goToPage(1)">戻る</button>
+  <img src="dat/foot4.png" class="footerImg">
+  <div class="footerButtons">
+    <button id="btnPage3" onclick="goToPage(3)">受け取り</button>
+    <button id="btnPage4" onclick="goToPage(4)">お知らせ</button>
+    <button id="btnPage5" onclick="goToPage(5)">マイペ</button>
+  </div>
+</div>
+
+<!-- P5 -->
+<div id="page5" class="page right-out">
+  <div class="bgContainer">
+    <img src="dat/mypage.png" id="page5Bg" alt="背景">
+    <div id="nameBoxP5" class="name"></div>
+    <div id="id" class="id">ID:E101138576253</div>
+  </div>
+      <button id="btnPage6" onclick="goToPage(6)">PhonePhonePhonePhonePhonePhonePhone</button>
+      <button class="backBtn" onclick="goToPage(1)">戻る</button>
+  <!-- フッターは画面全体固定なのでbgContainer外 -->
+  <img src="dat/foot5.png" class="footerImg">
+  <div class="footerButtons">
+    <button id="btnPage3" onclick="goToPage(3)">受け取り</button>
+    <button id="btnPage4" onclick="goToPage(4)">お知らせ</button>
+    <button id="btnPage5" onclick="goToPage(5)">マイペ</button>
+  </div>
+</div>
+
+<!-- P6 -->
+<div id="page6" class="page right-out">
+  <img src="dat/phone.png" id="page6Bg" style="width:100%; height:auto;" alt="Phoneページ">
+  <button class="back" onclick="goToPage(5)">戻る</button>
+</div>
+
+<script>
+// ページ管理
+const pages = {
+  1: document.getElementById("page1"),
+  2: document.getElementById("page2"),
+  3: document.getElementById("page3"),
+  4: document.getElementById("page4"),
+  5: document.getElementById("page5"),
+  6: document.getElementById("page6")
+};
+
+function goToPage(num){
+  Object.values(pages).forEach(p=>{
+    p.style.display="none";
+    p.classList.add("right-out");
+  });
+  pages[num].style.display="block";
+  setTimeout(()=>{ pages[num].classList.remove("right-out"); },10);
+
+  const header = document.getElementById("headerImg");
+  const footer = document.getElementById("footerImg");
+  const footerButtons = document.getElementById("footerButtons");
+  if(num===1){
+    header.style.display="block";
+    footer.style.display="block";
+    footerButtons.style.display="flex";
+  } else {
+    header.style.display="none";
+    footer.style.display="none";
+    footerButtons.style.display="none";
+  }
+}
+
+// P1 スワイプ
+const scrollArea = document.getElementById('scrollArea');
+let startY=0, isDragging=false;
+scrollArea.addEventListener('touchstart', e=>{ startY=e.touches[0].clientY; isDragging=true; });
+scrollArea.addEventListener('touchmove', e=>{
+  if(!isDragging) return;
+  const moveY = e.touches[0].clientY - startY;
+  scrollArea.style.transform = `translateY(${moveY}px)`;
+});
+scrollArea.addEventListener('touchend', ()=>{
+  isDragging=false;
+  scrollArea.style.transition='transform 0.3s ease';
+  scrollArea.style.transform='translateY(0)';
+  setTimeout(()=>{ scrollArea.style.transition=''; },300);
+});
+
+// ヘッダー・フッター高さ反映
+function adjustScrollArea(){
+  const header=document.getElementById('headerImg');
+  const footer=document.getElementById('footerImg');
+  scrollArea.style.top = (header.offsetHeight||0)+'px';
+  scrollArea.style.bottom = (footer.offsetHeight||0)+'px';
+}
+window.addEventListener('load', adjustScrollArea);
+window.addEventListener('resize', adjustScrollArea);
+
+// P2→P5 名前コピー
+function copyP2ToP5(){
+  const nameP2 = document.getElementById('nameBox');
+  const nameP5 = document.getElementById('nameBoxP5');
+  nameP5.textContent = nameP2.textContent;
+
+
+}
+// ページロード時にトップ(P1)を表示
+window.addEventListener('load', () => {
+  goToPage(1);
+});
+window.addEventListener('load', copyP2ToP5);
+window.addEventListener('resize', copyP2ToP5);
+
+// Page2のスタンプ拡大アニメーション
+const page2 = document.getElementById('page2');
+const stamp = page2.querySelector('.stamp');
+
+page2.addEventListener('click', () => {
+  stamp.style.transition = 'none'; // 拡大は瞬時
+  stamp.style.transform = 'scale(3)'; // 一瞬大きく
+  setTimeout(() => {
+    stamp.style.transition = 'transform 0.5s ease'; // 元に戻るアニメーション
+    stamp.style.transform = 'scale(1)';
+    }, 0); // 0.2秒後に戻す
+});
+
+</script>
+
+</body>
+</html>
